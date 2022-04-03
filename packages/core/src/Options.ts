@@ -88,6 +88,13 @@ export interface Options {
   sourceResolver: SourceResolver;
 
   /**
+   * Provide custom way to resolve type definitions
+   * given a package name, return content of package's **singleton** type definition file content
+   * the content will added to monaco as extra lib
+   */
+  resolveTypeDefinition?: (packageName: string) => Promise<string | undefined> | string | undefined;
+
+  /**
    * The root directory where your edited files are. Must end with
    * a slash. The default is suitable unless you change the default
    * URI of files loaded in the editor.
