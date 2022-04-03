@@ -1,8 +1,6 @@
 import type * as monaco from 'monaco-editor';
 import { Options } from './Options';
 import { SourceCache } from './SourceCache';
-import { DummySourceCache } from './DummySourceCache';
-import { UnpkgSourceResolver } from './UnpkgSourceResolver';
 import { DependencyParser } from './DependencyParser';
 import {
   ImportResourcePath,
@@ -75,7 +73,7 @@ export class ImportResolver {
     }
   }
 
-  private async resolveImport(importResource: ImportResourcePath, depth: RecursionDepth) {
+  public async resolveImport(importResource: ImportResourcePath, depth: RecursionDepth) {
     const hash = this.hashImportResourcePath(importResource);
     if (this.loadedFiles.includes(hash)) {
       return;
@@ -85,6 +83,11 @@ export class ImportResolver {
 
     switch (importResource.kind) {
       case 'package':
+        const result = await this.tryResolveFromCustomDefinition(importResource.packageName);
+        if (result) {
+          return;
+        }
+
         const packageRelativeImport = await this.resolveImportFromPackageRoot(importResource);
         if (packageRelativeImport) {
           return await this.resolveImportInPackage(packageRelativeImport, depth.nextPackage().nextFile());
@@ -95,6 +98,20 @@ export class ImportResolver {
       case 'relative-in-package':
         return await this.resolveImportInPackage(importResource, depth.nextFile());
     }
+  }
+
+  private async tryResolveFromCustomDefinition(packageName: string): Promise<boolean> {
+    if (this.options.resolveTypeDefinition) {
+      const typeDefinition = await this.options.resolveTypeDefinition(packageName);
+      if (typeDefinition) {
+        const filePath = this.options.fileRootPath + (
+          packageName.startsWith('@') ? path.join('node_modules', packageName) : path.join('@types', packageName)
+        ) + 'index.d.ts';
+        this.monaco.languages.typescript.typescriptDefaults.addExtraLib(typeDefinition, filePath);
+        return true;
+      }
+    }
+    return false;
   }
 
   private async resolveImportInPackage(importResource: ImportResourcePathRelativeInPackage, depth: RecursionDepth) {
