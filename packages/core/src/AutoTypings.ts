@@ -7,6 +7,7 @@ import * as path from 'path';
 import type * as monaco from 'monaco-editor';
 import { invokeUpdate } from './invokeUpdate';
 import { RecursionDepth } from './RecursionDepth';
+import { ImportResourcePathPackage } from './ImportResourcePath';
 
 type Editor = monaco.editor.ICodeEditor | monaco.editor.IStandaloneCodeEditor;
 
@@ -40,7 +41,7 @@ export class AutoTypings implements monaco.IDisposable {
       AutoTypings.sharedCache = options.sourceCache;
     }
 
-    const monacoInstance = options?.monaco ?? monaco;
+    const monacoInstance = options?.monaco;
 
     if (!monacoInstance) {
       throw new Error('monacoInstance not found, you can specify the monaco instance via options.monaco');
@@ -76,6 +77,10 @@ export class AutoTypings implements monaco.IDisposable {
 
   public async clearCache() {
     await this.options.sourceCache.clear();
+  }
+
+  public async resolvePackage(importResource: ImportResourcePathPackage) {
+    return await this.importResolver.resolveImport(importResource, new RecursionDepth(this.options));
   }
 
   private debouncedResolveContents() {
