@@ -1,5 +1,5 @@
 {
-  "name": "monaco-editor-auto-typings",
+  "name": "@hirohe/monaco-editor-auto-typings",
   "version": "0.2.0",
   "repository": {
     "type": "git",
